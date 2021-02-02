@@ -1,12 +1,11 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using static System.Console;
+using Microsoft.Extensions.Logging;
 
 namespace SecureMigrationsSample.Web
 {
@@ -21,6 +20,8 @@ namespace SecureMigrationsSample.Web
                 new Option<bool>("--thenExit", "Whether to exit after migrations (instead of starting web app)")
             };
 
+            var logger = host.Services.GetRequiredService<ILogger<Program>>();
+
             rootCommand.Handler = CommandHandler.Create<bool, bool>(async (migrate, thenExit) =>
             {
                 if (migrate)
@@ -28,21 +29,21 @@ namespace SecureMigrationsSample.Web
                     using (var scope = host.Services.CreateScope())
                     {
                         var sampleContext = scope.ServiceProvider.GetService<SampleContext>();
-                        WriteLine($"Running migrations on db {sampleContext.Database.GetDbConnection().ConnectionString}");
+                        logger.LogInformation("Running migrations on db {connectionString}", sampleContext.Database.GetDbConnection().ConnectionString);
                         await sampleContext.Database.MigrateAsync();
-                        WriteLine("Done running migrations");
+                        logger.LogInformation("Done running migrations");
                     }
                 }
                 else {
-                    WriteLine("Skipping migrations");
+                    logger.LogInformation("Skipping migrations");
                 }
                 if (!thenExit)
                 {
-                    WriteLine("Starting web app.");
+                    logger.LogInformation("Starting web app.");
                     await host.RunAsync();
                 }
                 else {
-                    WriteLine("Exit without starting web app.");
+                    logger.LogInformation("Exit without starting web app.");
                 }
             });
             return await rootCommand.InvokeAsync(args);
