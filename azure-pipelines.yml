@@ -47,7 +47,10 @@ stages:
         CONN_STRING: $(connectionString)
       displayName: Run database migrations
 
-#    - task: AzureWebApp@1
-#      displayName: Deploy application
-#      inputs:
-        
+    - task: AzureWebApp@1
+      displayName: Deploy application
+      inputs:
+        appType: webAppLinux
+        azureSubscription: 'SECURED_MIGRATIONS_WEBAPP'
+        appName: 'securedmigrationssample'
+        package: '$(System.ArtifactsDirectory)/drop/*.zip'
