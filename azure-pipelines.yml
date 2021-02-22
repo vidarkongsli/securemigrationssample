@@ -41,7 +41,7 @@ stages:
     - task: ExtractFiles@1
       displayName: Extract application
       inputs:
-        archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
+        archiveFilePatterns: '$(System.ArtifactsDirectory)/drop/*.zip'
         destinationFolder: '$(System.DefaultWorkingDirectory)/work'
 
     - script: |
