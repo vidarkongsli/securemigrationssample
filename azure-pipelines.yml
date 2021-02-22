@@ -1,26 +1,54 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+variables:
+  connectionString: ''
 
 trigger:
 - main
 
-pool:
-  vmImage: ubuntu-latest
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        modifyOutputPath: false
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
+        projects: 'src/SecureMigrationsSample.Web/SecureMigrationsSample.Web.csproj'
+        zipAfterPublish: true
 
-steps:
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'publish'
-    publishWebProjects: false
-    modifyOutputPath: false
-    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
-    projects: 'src/SecureMigrationsSample.Web/SecureMigrationsSample.Web.csproj'
-    zipAfterPublish: true
-    
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: Download application
+      inputs:
+        buildType: current
+        
+    - task: ExtractFiles@1
+      displayName: Extract application
+      inputs:
+        archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
+        destinationFolder: '$(System.DefaultWorkingDirectory)/work'
+
+    - script: |
+        export ConnectionStrings:DefaultConnection="$(connectionString)"
+        dotnet run '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
+      displayName: Run database migrations
+
+#    - task: AzureWebApp@1
+#      displayName: Deploy application
+#      inputs:
+        
