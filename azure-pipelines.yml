@@ -45,8 +45,7 @@ stages:
         destinationFolder: '$(System.DefaultWorkingDirectory)/work'
 
     - script: |
-        export ConnectionStrings:DefaultConnection="$(connectionString)"
-        dotnet run '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
+        env ConnectionStrings:DefaultConnection="$(connectionString)" dotnet '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
       displayName: Run database migrations
 
 #    - task: AzureWebApp@1
