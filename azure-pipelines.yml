@@ -15,10 +15,10 @@ steps:
     command: 'publish'
     publishWebProjects: false
     modifyOutputPath: false
-    packDirectory: $(Build.ArtifactStagingDirectory)
     arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
     projects: 'src/SecureMigrationsSample.Web/SecureMigrationsSample.Web.csproj'
-
+    zipAfterPublish: true
+    
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
