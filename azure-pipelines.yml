@@ -36,7 +36,8 @@ stages:
       displayName: Download application
       inputs:
         buildType: current
-        
+        artifactName: drop
+
     - task: ExtractFiles@1
       displayName: Extract application
       inputs:
