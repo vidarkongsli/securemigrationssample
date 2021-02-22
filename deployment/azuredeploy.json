@@ -1,0 +1,184 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of web app to provision"
+            }
+        },
+        "sqlAdminPassword": {
+           "type": "securestring",
+           "metadata": {
+                "description": "SQL SA password"
+            }
+        }
+    },
+    "variables": {
+        "webAppName": "[parameters('appName')]",
+        "webAppPlanName" : "[concat(parameters('appName'),'-plan')]",
+        "sqlServerName" : "[concat(parameters('appName'),'-sql')]",
+        "sqlDatabaseName" : "[concat(parameters('appName'),'-db')]",
+        "sqlAdminName" : "[concat(parameters('appName'),'login')]",
+        "location":"[resourceGroup().location]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2019-06-01-preview",
+            "name": "[variables('sqlServerName')]",
+            "location": "[variables('location')]",
+            "kind": "v12.0",
+            "properties": {
+                "administratorLogin": "[variables('sqlAdminName')]",
+                "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+                "version": "12.0",
+                "publicNetworkAccess": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-02-01",
+            "name": "[variables('webAppPlanName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "B1",
+                "tier": "Basic",
+                "size": "B1",
+                "family": "B",
+                "capacity": 1
+            },
+            "kind": "linux",
+            "properties": {
+                "perSiteScaling": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[concat(variables('sqlServerName'), '/', variables('sqlDatabaseName'))]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+            ],
+            "sku": {
+                "name": "GP_S_Gen5",
+                "tier": "GeneralPurpose",
+                "family": "Gen5",
+                "capacity": 1
+            },
+            "kind": "v12.0,user,vcore,serverless",
+            "properties": {
+                "collation": "Danish_Norwegian_CI_AS",
+                "maxSizeBytes": 34359738368,
+                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                "zoneRedundant": false,
+                "readScale": "Disabled",
+                "autoPauseDelay": 60,
+                "storageAccountType": "GRS",
+                "minCapacity": 0.5
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "[variables('webAppName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('webAppPlanName'))]"
+            ],
+            "kind": "app,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('webAppPlanName'))]",
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "siteConfig": {},
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": false,
+                "redundancyMode": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(variables('webAppName'), '/web')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+            ],
+            "properties": {
+                "numberOfWorkers": 1,
+                "defaultDocuments": [
+                    "Default.htm",
+                    "Default.html",
+                    "Default.asp",
+                    "index.htm",
+                    "index.html",
+                    "iisstart.htm",
+                    "default.aspx",
+                    "index.php",
+                    "hostingstart.html"
+                ],
+                "netFrameworkVersion": "v4.0",
+                "linuxFxVersion": "DOTNETCORE|5.0",
+                "requestTracingEnabled": false,
+                "remoteDebuggingEnabled": false,
+                "httpLoggingEnabled": false,
+                "logsDirectorySizeLimit": 35,
+                "detailedErrorLoggingEnabled": false,
+                "azureStorageAccounts": {},
+                "scmType": "None",
+                "use32BitWorkerProcess": true,
+                "webSocketsEnabled": false,
+                "alwaysOn": false,
+                "loadBalancing": "LeastRequests",
+                "experiments": {
+                    "rampUpRules": []
+                },
+                "autoHealEnabled": false,
+                "localMySqlEnabled": false,
+                "ipSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictionsUseMain": false,
+                "http20Enabled": false,
+                "minTlsVersion": "1.2",
+                "ftpsState": "AllAllowed",
+                "reservedInstanceCount": 0
+            }
+        }
+    ]
+}
