@@ -3,25 +3,25 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "appName": {
-           "type": "string",
-           "metadata": {
+            "type": "string",
+            "metadata": {
                 "description": "Name of web app to provision"
             }
         },
         "sqlAdminPassword": {
-           "type": "securestring",
-           "metadata": {
+            "type": "securestring",
+            "metadata": {
                 "description": "SQL SA password"
             }
         }
     },
     "variables": {
         "webAppName": "[parameters('appName')]",
-        "webAppPlanName" : "[concat(parameters('appName'),'-plan')]",
-        "sqlServerName" : "[concat(parameters('appName'),'-sql')]",
-        "sqlDatabaseName" : "[concat(parameters('appName'),'-db')]",
-        "sqlAdminName" : "[concat(parameters('appName'),'login')]",
-        "location":"[resourceGroup().location]"
+        "webAppPlanName": "[concat(parameters('appName'),'-plan')]",
+        "sqlServerName": "[concat(parameters('appName'),'-sql')]",
+        "sqlDatabaseName": "[concat(parameters('appName'),'-db')]",
+        "sqlAdminName": "[concat(parameters('appName'),'login')]",
+        "location": "[resourceGroup().location]"
     },
     "resources": [
         {
@@ -35,7 +35,23 @@
                 "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
                 "version": "12.0",
                 "publicNetworkAccess": "Enabled"
-            }
+            },
+            "resources": [
+                {
+                    "name": "AllowAllWindowsAzureIps",
+                    "type": "firewallRules",
+                    "location": "[variables('location')]",
+                    "kind": "v12.0",
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    },
+                    "apiVersion": "2014-04-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+                    ]
+                }
+            ]
         },
         {
             "type": "Microsoft.Web/serverfarms",
