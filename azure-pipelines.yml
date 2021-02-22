@@ -16,7 +16,8 @@ steps:
     publishWebProjects: false
     modifyOutputPath: false
     packDirectory: $(Build.ArtifactStagingDirectory)
-    workingDirectory: src/SecureMigrationsSample.Web
+    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
+    projects: 'src/SecureMigrationsSample.Web/SecureMigrationsSample.Web.csproj'
 
 - task: PublishBuildArtifacts@1
   inputs:
