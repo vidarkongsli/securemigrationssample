@@ -16,7 +16,7 @@ steps:
     publishWebProjects: false
     modifyOutputPath: false
     packDirectory: $(Build.ArtifactStagingDirectory)
-    workingDirectory: src
+    workingDirectory: src/SecureMigrationsSample.Web
 
 - task: PublishBuildArtifacts@1
   inputs:
