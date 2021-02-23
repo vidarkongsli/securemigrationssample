@@ -1,0 +1,2 @@
+CREATE LOGIN [app] WITH PASSWORD = 'bwz1aBed7EptIE83FBmqJyVnAujet1';
+CREATE LOGin [pipeline] WITH PASSWORD = 'bwz1aBed7EptIE83FBmqJyVnAujet2';
