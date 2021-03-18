@@ -30,6 +30,8 @@ stages:
       runOnce:
         preDeploy:
           steps:
+          - download: current
+
           - task: ExtractFiles@1
             displayName: Extract application
             inputs:
