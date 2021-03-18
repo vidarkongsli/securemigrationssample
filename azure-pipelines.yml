@@ -1,12 +1,13 @@
 trigger:
 - main
 
+pool:
+  vmImage: ubuntu-latest
+
 stages:
 - stage: Build
   jobs:
   - job: Build
-    pool:
-      vmImage: ubuntu-latest
     steps:
     - task: DotNetCoreCLI@2
       inputs:
@@ -17,40 +18,35 @@ stages:
         projects: 'src/SecureMigrationsSample.Web/SecureMigrationsSample.Web.csproj'
         zipAfterPublish: true
 
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: app
 
 - stage: Deploy
   jobs:
-  - job: Deploy
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - task: DownloadBuildArtifacts@0
-      displayName: Download application
-      inputs:
-        buildType: current
-        artifactName: drop
+  - deployment: Deploy
+    displayName: Deploy application
+    environment: production
+    strategy:
+      runOnce:
+        preDeploy:
+          steps:
+          - task: ExtractFiles@1
+            displayName: Extract application
+            inputs:
+              archiveFilePatterns: '$(Pipeline.Workspace)/app/*.zip'
+              destinationFolder: '$(System.DefaultWorkingDirectory)/work'
 
-    - task: ExtractFiles@1
-      displayName: Extract application
-      inputs:
-        archiveFilePatterns: '$(System.ArtifactsDirectory)/drop/*.zip'
-        destinationFolder: '$(System.DefaultWorkingDirectory)/work'
-
-    - script: |
-        env ConnectionStrings:DefaultConnection="$CONN_STRING" dotnet '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
-      env:
-        CONN_STRING: $(connectionString)
-      displayName: Run database migrations
-
-    - task: AzureWebApp@1
-      displayName: Deploy application
-      inputs:
-        appType: webAppLinux
-        azureSubscription: 'SECURED_MIGRATIONS_WEBAPP'
-        appName: 'securedmigrationssample'
-        package: '$(System.ArtifactsDirectory)/drop/*.zip'
+          - script: |
+              env ConnectionStrings:DefaultConnection="$CONN_STRING" dotnet '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
+            env:
+              CONN_STRING: $(connectionString)
+            displayName: Run database migrations
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: Deploy application
+            inputs:
+              appType: webAppLinux
+              azureSubscription: 'SECURED_MIGRATIONS_WEBAPP'
+              appName: 'securedmigrationssample'
+              package: '$(Pipeline.Workspace)/app/*.zip'

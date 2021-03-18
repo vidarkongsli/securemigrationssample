@@ -31,7 +31,7 @@ namespace SecureMigrationsSample.Web
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             
             services.AddHealthChecks()
-                .AddDbContextCheck<SampleContext>();;
+                .AddDbContextCheck<SampleContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
