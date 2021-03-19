@@ -16,6 +16,7 @@ stages:
   - job: Build
     steps:
     - task: DotNetCoreCLI@2
+      displayName: Build application
       inputs:
         command: 'publish'
         publishWebProjects: false
@@ -26,6 +27,7 @@ stages:
 
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: app
+      displayName: Publish artifact
 
 - stage: Provision
   dependsOn: []
@@ -42,6 +44,7 @@ stages:
           - checkout: self
           - download: none
           - task: AzureResourceGroupDeployment@2
+            displayName: Apply ARM template
             inputs:
               azureSubscription: $(azureServiceConnection)
               action: 'Create Or Update Resource Group'
@@ -61,14 +64,15 @@ stages:
               Write-Host "##vso[task.setvariable variable=sqlServerAdminUser;]$($data.sqlServerAdminUser.value)"
               Write-Host "##vso[task.setvariable variable=sqlServerName;]$($data.sqlServerName.value)"
               Write-Host "##vso[task.setvariable variable=sqlDatabaseName;]$($data.sqlDatabaseName.value)"
-          
+            displayName: Collect variables from ARM deployment
+
           - task: SqlAzureDacpacDeployment@1
             displayName: Create SQL server logins
             inputs:
               azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
               azureSubscription: $(azureServiceConnection)
               authenticationType: 'aadAuthenticationIntegrated' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
-              serverName: $(sqlServerName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
+              serverName: '$(sqlServerName).database.windows.net' # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
               databaseName: master # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
               deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
               sqlInline: | # Required when deployType == InlineSqlTask
@@ -95,7 +99,7 @@ stages:
           #     azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
           #     azureSubscription: $(azureServiceConnection)
           #     authenticationType: 'aadAuthenticationIntegrated' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
-          #     serverName: $(sqlServerName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
+          #     serverName: '$(sqlServerName).database.windows.net' # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
           #     databaseName: $(sqlDatabaseName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
           #     deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
           #     sqlInline: | # Required when deployType == InlineSqlTask
