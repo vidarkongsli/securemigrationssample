@@ -28,7 +28,7 @@ stages:
       artifact: app
 
 - stage: Provision
-  dependsOn: none
+  dependsOn: []
   jobs:
   - deployment: Provision
     displayName: Provision application infrastructure
