@@ -50,12 +50,72 @@ stages:
               csmParametersFile: deployment/azuredeploy.parameters.json
               overrideParameters: -aadAdminOid $(aadAdminOid) -aadAdminLogin $(aadAdminLogin)
               deploymentMode: 'Incremental'
-              deploymentOutputs: FOOBAR
+              deploymentOutputs: PROVISION
           - pwsh: |
-              Write-host "Output! $($env:FOOBAR)"
+              $data = ConvertFrom-Json $env:PROVISION
+              Write-Host "##vso[task.setvariable variable=sqlServerAdminPassword;issecret=true]$($data.sqlServerAdminPassword.value)"
+              Write-Host "##vso[task.setvariable variable=sqlServerAppPassword;issecret=true]$($data.sqlServerAppPassword.value)"
+              Write-Host "##vso[task.setvariable variable=sqlServerPipelinePassword;issecret=true]$($data.sqlServerPipelinePassword.value)"
+              Write-Host "##vso[task.setvariable variable=sqlServerAdminUser;]$($data.sqlServerAdminUser.value)"
+              Write-Host "##vso[task.setvariable variable=sqlServerName;]$($data.sqlServerName.value)"
+              Write-Host "##vso[task.setvariable variable=sqlDatabaseName;]$($data.sqlDatabaseName.value)"
+          
+          - task: SqlAzureDacpacDeployment@1
+            displayName: Create SQL server logins
+            inputs:
+              azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
+              azureSubscription: $(azureServiceConnection)
+              authenticationType: 'aadAuthenticationIntegrated' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
+              serverName: $(sqlServerName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
+              databaseName: master # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
+              deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
+              sqlInline: | # Required when deployType == InlineSqlTask
+                  IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='app')
+                  BEGIN
+                    CREATE LOGIN [app] WITH PASSWORD='$(sqlServerAppPassword)';
+                  END
+                  ELSE
+                  BEGIN
+                    ALTER LOGIN [app] WITH PASSWORD='$(sqlServerAppPassword)';
+                  END;
+                  IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='pipeline')
+                  BEGIN
+                    CREATE LOGIN [pipeline] WITH PASSWORD='$(sqlServerPipelinePassword)';
+                  END
+                  ELSE
+                  BEGIN
+                    ALTER LOGIN [pipeline] WITH PASSWORD='$(sqlServerPipelinePassword)';
+                  END;
+
+          # - task: SqlAzureDacpacDeployment@1
+          #   displayName: Create database users
+          #   inputs:
+          #     azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
+          #     azureSubscription: $(azureServiceConnection)
+          #     authenticationType: 'aadAuthenticationIntegrated' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
+          #     serverName: $(sqlServerName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
+          #     databaseName: $(sqlDatabaseName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
+          #     deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
+          #     sqlInline: | # Required when deployType == InlineSqlTask
+          #         IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='app')
+          #         BEGIN
+          #           CREATE LOGIN [app] WITH PASSWORD='$(sqlServerAppPassword)';
+          #         END
+          #         ELSE
+          #         BEGIN
+          #           ALTER LOGIN [app] WITH PASSWORD='$(sqlServerAppPassword)';
+          #         END;
+          #         IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='pipeline')
+          #         BEGIN
+          #           CREATE LOGIN [pipeline] WITH PASSWORD='$(sqlServerPipelinePassword)';
+          #         END
+          #         ELSE
+          #         BEGIN
+          #           ALTER LOGIN [pipeline] WITH PASSWORD='$(sqlServerPipelinePassword)';
+          #         END;
 
 - stage: Deploy
-  dependsOn: Build
+  dependsOn: [Build,Provision]
   jobs:
   - deployment: Deploy
     displayName: Deploy application
