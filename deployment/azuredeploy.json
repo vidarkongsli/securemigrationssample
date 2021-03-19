@@ -8,16 +8,16 @@
                 "description": "Name of web app to provision"
             }
         },
-        "sqlAdminPassword": {
-            "type": "securestring",
+        "aadAdminOid": {
+            "type": "string",
             "metadata": {
-                "description": "SQL SA password"
+                "description": "OID for SQL SA (AAD)"
             }
         },
-        "defaultConnectionString": {
-           "type": "securestring",
-           "metadata": {
-                "description": "ConnectionString to set in web app"
+        "aadAdminLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "Login for SQL SA (AAD)"
             }
         }
     },
@@ -26,19 +26,21 @@
         "webAppPlanName": "[concat(parameters('appName'),'-plan')]",
         "sqlServerName": "[concat(parameters('appName'),'-sql')]",
         "sqlDatabaseName": "[concat(parameters('appName'),'-db')]",
-        "sqlAdminName": "[concat(parameters('appName'),'login')]",
-        "location": "[resourceGroup().location]"
+        "sqlServerAdminUser": "[concat(parameters('appName'),'login')]",
+        "location": "[resourceGroup().location]",
+        "sqlServerAdminPassword": "[concat('P', uniqueString(resourceGroup().id, '492996D4-1C4D-41A3-AD86-18F403CC74DA'), 'x', '!')]",
+        "databaseConnectionString": "[concat('Server=tcp:',variables('sqlServerName'),'.database.windows.net,1433;Database=',variables('sqlDatabaseName'),';MultipleActiveResultSets=true;')]"
     },
     "resources": [
         {
             "type": "Microsoft.Sql/servers",
-            "apiVersion": "2019-06-01-preview",
+            "apiVersion": "2020-08-01-preview",
             "name": "[variables('sqlServerName')]",
             "location": "[variables('location')]",
             "kind": "v12.0",
             "properties": {
-                "administratorLogin": "[variables('sqlAdminName')]",
-                "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+                "administratorLogin": "[variables('sqlServerAdminUser')]",
+                "administratorLoginPassword": "[variables('sqlServerAdminPassword')]",
                 "version": "12.0",
                 "publicNetworkAccess": "Enabled"
             },
@@ -53,6 +55,21 @@
                         "endIpAddress": "0.0.0.0"
                     },
                     "apiVersion": "2014-04-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+                    ]
+                },
+                {
+                    "type": "administrators",
+                    "name": "activeDirectory",
+                    "apiVersion": "2020-08-01-preview",
+                    "location": "[variables('location')]",
+                    "properties": {
+                        "administratorType": "ActiveDirectory",
+                        "login": "[parameters('aadAdminLogin')]",
+                        "sid": "[parameters('aadAdminOid')]",
+                        "tenantId": "[subscription().tenantId]"
+                    },
                     "dependsOn": [
                         "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
                     ]
@@ -137,21 +154,21 @@
                 "httpsOnly": false,
                 "redundancyMode": "None"
             },
-            "resources":[
+            "resources": [
                 {
-          "name": "connectionstrings",
-          "type": "config",
-          "apiVersion": "2016-08-01",
-          "dependsOn": [
-            "[resourceId('Microsoft.Web/Sites', variables('webAppName'))]"
-          ],
-          "properties": {
-            "Default": {
-              "value": "[concat(variables('connectionStringBase'),'-Default')]",
-              "type": "SQLAzure"
-            }
-          }
-        }
+                    "name": "connectionstrings",
+                    "type": "config",
+                    "apiVersion": "2018-11-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', variables('webAppName'))]"
+                    ],
+                    "properties": {
+                        "Default": {
+                            "value": "[variables('databaseConnectionString')]",
+                            "type": "SQLAzure"
+                        }
+                    }
+                }
             ]
         },
         {
@@ -218,5 +235,23 @@
                 "reservedInstanceCount": 0
             }
         }
-    ]
+    ],
+    "outputs": {
+        "sqlServerAdminPassword": {
+           "type": "securestring",
+           "value": "[variables('sqlServerAdminPassword')]"
+        },
+        "sqlServerAdminUser": {
+           "type": "string",
+           "value": "[variables('sqlServerAdminUser')]"
+        },
+        "sqlServerName": {
+           "type": "string",
+           "value": "[variables('sqlServerName')]"
+        },
+        "sqlDatabaseName": {
+           "type": "string",
+           "value": "[variables('sqlDatabaseName')]"
+        }
+    }
 }

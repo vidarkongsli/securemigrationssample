@@ -4,6 +4,12 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+- name: azureServiceConnection
+  value: 'SECURED_MIGRATIONS_WEBAPP'
+- name: location
+  value: NorwayEast
+
 stages:
 - stage: Build
   jobs:
@@ -21,7 +27,34 @@ stages:
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: app
 
+- stage: Provision
+  dependsOn: none
+  jobs:
+  - deployment: Provision
+    displayName: Provision application infrastructure
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: current
+          - download: none
+          - task: AzureResourceGroupDeployment@2
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              action: 'Create Or Update Resource Group'
+              resourceGroupName: $(resourceGroupName)
+              location: $(location) 
+              templateLocation: 'Linked artifact'
+              csmFile: deployment/azuredeploy.json
+              csmParametersFile: deployment/azuredeploy.parameters.json
+              deploymentMode: 'Incremental'
+              deploymentOutputs: FOOBAR
+          - pwsh: |
+              Write-host "Output! $($env:FOOBAR)"
+
 - stage: Deploy
+  dependsOn: Build
   jobs:
   - deployment: Deploy
     displayName: Deploy application
@@ -49,6 +82,6 @@ stages:
             displayName: Deploy application
             inputs:
               appType: webAppLinux
-              azureSubscription: 'SECURED_MIGRATIONS_WEBAPP'
+              azureSubscription: $(azureServiceConnection)
               appName: 'securedmigrationssample'
               package: '$(Pipeline.Workspace)/app/*.zip'

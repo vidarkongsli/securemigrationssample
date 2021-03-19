@@ -5,10 +5,10 @@
         "appName": {
             "value": "securedmigrationssample"
         },
-        "sqlAdminPassword": {
+        "aadAdminOid": {
             "value": ""
         },
-        "defaultConnectionString": {
+        "aadAdminLogin": {
             "value": ""
         }
     }
