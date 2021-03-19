@@ -36,6 +36,8 @@ stages:
     strategy:
       runOnce:
         deploy:
+          pool:
+            vmImage: windows-latest
           steps:
           - checkout: self
           - download: none
