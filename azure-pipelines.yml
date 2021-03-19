@@ -75,6 +75,7 @@ stages:
               serverName: '$(sqlServerName).database.windows.net' # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
               databaseName: master # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
               deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
+              IpDetectionMethod: AutoDetect
               sqlInline: | # Required when deployType == InlineSqlTask
                   IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='app')
                   BEGIN
