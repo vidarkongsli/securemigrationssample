@@ -48,6 +48,7 @@ stages:
               templateLocation: 'Linked artifact'
               csmFile: deployment/azuredeploy.json
               csmParametersFile: deployment/azuredeploy.parameters.json
+              overrideParameters: -aadAdminOid $(aadAdminOid) -aadAdminLogin $(aadAdminLogin)
               deploymentMode: 'Incremental'
               deploymentOutputs: FOOBAR
           - pwsh: |
