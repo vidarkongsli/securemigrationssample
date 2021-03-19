@@ -37,7 +37,7 @@ stages:
       runOnce:
         deploy:
           steps:
-          - checkout: current
+          - checkout: self
           - download: none
           - task: AzureResourceGroupDeployment@2
             inputs:
