@@ -71,7 +71,7 @@ stages:
             inputs:
               azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
               azureSubscription: $(azureServiceConnection)
-              authenticationType: 'aadAuthenticationIntegrated' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
+              authenticationType: 'servicePrincipal' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
               serverName: '$(sqlServerName).database.windows.net' # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
               databaseName: master # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
               deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
