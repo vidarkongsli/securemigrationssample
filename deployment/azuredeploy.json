@@ -36,14 +36,13 @@
     "resources": [
         {
             "type": "Microsoft.Sql/servers",
-            "apiVersion": "2020-11-01-preview",
+            "apiVersion": "2020-08-01-preview",
             "name": "[variables('sqlServerName')]",
             "location": "[variables('location')]",
-            "kind": "v12.0",
+            "identity": {"type": "SystemAssigned"},
             "properties": {
                 "administratorLogin": "[variables('sqlServerAdminUser')]",
                 "administratorLoginPassword": "[variables('sqlServerAdminPassword')]",
-                "version": "12.0",
                 "publicNetworkAccess": "Enabled"
             },
             
