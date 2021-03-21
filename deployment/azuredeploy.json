@@ -262,6 +262,10 @@
         "sqlDatabaseName": {
            "type": "string",
            "value": "[variables('sqlDatabaseName')]"
+        },
+        "webAppName": {
+           "type": "string",
+           "value": "[variables('webAppPlanName')]"
         }
     }
 }
