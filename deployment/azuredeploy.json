@@ -36,7 +36,7 @@
     "resources": [
         {
             "type": "Microsoft.Sql/servers",
-            "apiVersion": "2020-08-01-preview",
+            "apiVersion": "2020-11-01-preview",
             "name": "[variables('sqlServerName')]",
             "location": "[variables('location')]",
             "kind": "v12.0",
@@ -46,9 +46,7 @@
                 "version": "12.0",
                 "publicNetworkAccess": "Enabled"
             },
-            "identity": {
-                "type": "SystemAssigned"
-            }
+            
             "resources": [
                 {
                     "name": "AllowAllWindowsAzureIps",
@@ -243,32 +241,32 @@
     ],
     "outputs": {
         "sqlServerAdminPassword": {
-           "type": "string",
-           "value": "[variables('sqlServerAdminPassword')]"
+            "type": "string",
+            "value": "[variables('sqlServerAdminPassword')]"
         },
-         "sqlServerAppPassword": {
-           "type": "string",
-           "value": "[variables('sqlServerAppPassword')]"
+        "sqlServerAppPassword": {
+            "type": "string",
+            "value": "[variables('sqlServerAppPassword')]"
         },
-         "sqlServerPipelinePassword": {
-           "type": "string",
-           "value": "[variables('sqlServerPipelinePassword')]"
+        "sqlServerPipelinePassword": {
+            "type": "string",
+            "value": "[variables('sqlServerPipelinePassword')]"
         },
         "sqlServerAdminUser": {
-           "type": "string",
-           "value": "[variables('sqlServerAdminUser')]"
+            "type": "string",
+            "value": "[variables('sqlServerAdminUser')]"
         },
         "sqlServerName": {
-           "type": "string",
-           "value": "[variables('sqlServerName')]"
+            "type": "string",
+            "value": "[variables('sqlServerName')]"
         },
         "sqlDatabaseName": {
-           "type": "string",
-           "value": "[variables('sqlDatabaseName')]"
+            "type": "string",
+            "value": "[variables('sqlDatabaseName')]"
         },
         "webAppName": {
-           "type": "string",
-           "value": "[variables('webAppName')]"
+            "type": "string",
+            "value": "[variables('webAppName')]"
         }
     }
 }
