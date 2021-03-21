@@ -265,7 +265,7 @@
         },
         "webAppName": {
            "type": "string",
-           "value": "[variables('webAppPlanName')]"
+           "value": "[variables('webAppName')]"
         }
     }
 }
