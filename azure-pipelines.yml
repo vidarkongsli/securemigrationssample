@@ -67,6 +67,20 @@ stages:
               Write-Host "##vso[task.setvariable variable=webAppName;]$($data.webAppName.value)"
             displayName: Collect variables from ARM deployment
 
+          - task: AzureCLI@2
+            displayName: Azure CLI
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: pscore
+              scriptLocation: inlineScript
+              inlineScript: |
+                  $ErrorActionPreference = 'stop'
+                  $sqlServerSecurityPrincipal = az ad sp list --display-name '$(sqlServerName)' | convertfrom-json
+                  if (-not($sqlServerSecurityPrincipal)) {
+                    Write-Error "Could not find AAD security principal for SQL Server $(sqlServerName)."
+                  }
+                  az ad group member add --group SqlServers --member-id $sqlServerSecurityPrincipal.objectId
+ 
           - task: SqlAzureDacpacDeployment@1
             displayName: Create SQL server logins
             inputs:
