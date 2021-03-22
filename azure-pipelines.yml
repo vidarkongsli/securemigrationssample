@@ -64,7 +64,7 @@ stages:
               Write-Host "##vso[task.setvariable variable=sqlServerName;]$($data.sqlServerName.value)"
               Write-Host "##vso[task.setvariable variable=sqlDatabaseName;]$($data.sqlDatabaseName.value)"
               Write-Host "##vso[task.setvariable variable=webAppName;]$($data.webAppName.value)"
-              Write-Host "##vso[task.setvariable variable=databaseConnectionString;]$($data.databaseConnectionString.value)"
+              Write-Host "##vso[task.setvariable variable=databaseConnectionString;isOutput=true]$($data.databaseConnectionString.value)"
             displayName: Collect variables from ARM deployment
             name: provVar
 
@@ -76,7 +76,7 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                   $ErrorActionPreference = 'stop'
-                  $sqlServerSecurityPrincipal = az ad sp list --display-name '$(sqlServerName)' | convertfrom-json
+                  $sqlServerSecurityPrincipal = az ad sp list --display-name '$(sqlServerName)' | ConvertFrom-Json
                   if (-not($sqlServerSecurityPrincipal)) {
                     Write-Error "Could not find AAD security principal for SQL Server $(sqlServerName)."
                   }
