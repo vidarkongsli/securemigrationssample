@@ -9,6 +9,8 @@ variables:
   value: 'SECURED_MIGRATIONS_WEBAPP'
 - name: location
   value: NorwayEast
+- name: sqlServerAadGroup
+  value: SqlServers
 
 stages:
 - stage: Build
@@ -68,7 +70,7 @@ stages:
             displayName: Collect variables from ARM deployment
 
           - task: AzureCLI@2
-            displayName: Azure CLI
+            displayName: Add SQL server to AAD group
             inputs:
               azureSubscription: $(azureServiceConnection)
               scriptType: pscore
@@ -79,10 +81,16 @@ stages:
                   if (-not($sqlServerSecurityPrincipal)) {
                     Write-Error "Could not find AAD security principal for SQL Server $(sqlServerName)."
                   }
-                  az ad group member add --group SqlServers --member-id $sqlServerSecurityPrincipal.objectId
+                  $isMember = az ad group member check --group '$(sqlServerAadGroup)' --member-id $sqlServerSecurityPrincipal.objectId | ConvertFrom-Json
+                  if ($isMember.Value) {
+                    Write-Output "Service principal $($sqlServerSecurityPrincipal.displayName) ($($sqlServerSecurityPrincipal.objectId)) is already member of group $(sqlServerAadGroup)."
+                  } else {
+                    Write-Output "Adding service principal $($sqlServerSecurityPrincipal.displayName) ($($sqlServerSecurityPrincipal.objectId)) to group $(sqlServerAadGroup)."
+                    az ad group member add --group '$(sqlServerAadGroup)' --member-id $sqlServerSecurityPrincipal.objectId
+                  }
  
           - task: SqlAzureDacpacDeployment@1
-            displayName: Create SQL server logins
+            displayName: Create SQL database user for application
             inputs:
               azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
               azureSubscription: $(azureServiceConnection)
