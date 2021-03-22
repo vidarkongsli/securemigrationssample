@@ -100,7 +100,18 @@ stages:
               deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
               IpDetectionMethod: AutoDetect
               sqlInline: | # Required when deployType == InlineSqlTask
-                  CREATE USER [$(webAppName)] FROM EXTERNAL PROVIDER
+                  IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = '$(webAppName)')
+                  BEGIN
+                    Print 'User $(webAppName) already exists in database $(sqlDatabaseName) on server $(sqlServerName)'
+                  END
+                  ELSE
+                  BEGIN
+                    Print 'Createing user $(webAppName) in database $(sqlDatabaseName) on server $(sqlServerName)'
+                    CREATE USER [$(webAppName)] FROM EXTERNAL PROVIDER
+                  END
+
+                  ALTER ROLE db_datareader ADD MEMBER [$(webAppName)];
+                  ALTER ROLE db_datawriter ADD MEMBER [$(webAppName)];
                   
           # - task: SqlAzureDacpacDeployment@1
           #   displayName: Create database users
