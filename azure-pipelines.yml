@@ -58,16 +58,15 @@ stages:
               overrideParameters: -aadAdminOid $(aadAdminOid) -aadAdminLogin $(aadAdminLogin)
               deploymentMode: 'Incremental'
               deploymentOutputs: PROVISION
+
           - pwsh: |
               $data = ConvertFrom-Json $env:PROVISION
-              Write-Host "##vso[task.setvariable variable=sqlServerAdminPassword;issecret=true]$($data.sqlServerAdminPassword.value)"
-              Write-Host "##vso[task.setvariable variable=sqlServerAppPassword;issecret=true]$($data.sqlServerAppPassword.value)"
-              Write-Host "##vso[task.setvariable variable=sqlServerPipelinePassword;issecret=true]$($data.sqlServerPipelinePassword.value)"
-              Write-Host "##vso[task.setvariable variable=sqlServerAdminUser;]$($data.sqlServerAdminUser.value)"
               Write-Host "##vso[task.setvariable variable=sqlServerName;]$($data.sqlServerName.value)"
               Write-Host "##vso[task.setvariable variable=sqlDatabaseName;]$($data.sqlDatabaseName.value)"
               Write-Host "##vso[task.setvariable variable=webAppName;]$($data.webAppName.value)"
+              Write-Host "##vso[task.setvariable variable=databaseConnectionString;]$($data.databaseConnectionString.value)"
             displayName: Collect variables from ARM deployment
+            name: provVar
 
           - task: AzureCLI@2
             displayName: Add SQL server to AAD group
@@ -109,43 +108,18 @@ stages:
                     Print 'Createing user $(webAppName) in database $(sqlDatabaseName) on server $(sqlServerName)'
                     CREATE USER [$(webAppName)] FROM EXTERNAL PROVIDER
                   END
-
                   ALTER ROLE db_datareader ADD MEMBER [$(webAppName)];
                   ALTER ROLE db_datawriter ADD MEMBER [$(webAppName)];
                   
-          # - task: SqlAzureDacpacDeployment@1
-          #   displayName: Create database users
-          #   inputs:
-          #     azureConnectionType: 'ConnectedServiceNameARM' # Optional. Options: connectedServiceName, connectedServiceNameARM
-          #     azureSubscription: $(azureServiceConnection)
-          #     authenticationType: 'aadAuthenticationIntegrated' # Options: server, aadAuthenticationPassword, aadAuthenticationIntegrated, connectionString, servicePrincipal
-          #     serverName: '$(sqlServerName).database.windows.net' # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
-          #     databaseName: $(sqlDatabaseName) # Required when authenticationType == Server || AuthenticationType == AadAuthenticationPassword || AuthenticationType == AadAuthenticationIntegrated || AuthenticationType == servicePrincipal
-          #     deployType: 'inlineSqlTask' # Options: dacpacTask, sqlTask, inlineSqlTask
-          #     sqlInline: | # Required when deployType == InlineSqlTask
-          #         IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='app')
-          #         BEGIN
-          #           CREATE LOGIN [app] WITH PASSWORD='$(sqlServerAppPassword)';
-          #         END
-          #         ELSE
-          #         BEGIN
-          #           ALTER LOGIN [app] WITH PASSWORD='$(sqlServerAppPassword)';
-          #         END;
-          #         IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name='pipeline')
-          #         BEGIN
-          #           CREATE LOGIN [pipeline] WITH PASSWORD='$(sqlServerPipelinePassword)';
-          #         END
-          #         ELSE
-          #         BEGIN
-          #           ALTER LOGIN [pipeline] WITH PASSWORD='$(sqlServerPipelinePassword)';
-          #         END;
-
 - stage: Deploy
   dependsOn: [Build,Provision]
   jobs:
   - deployment: Deploy
     displayName: Deploy application
     environment: production
+    variables:
+    - name: connectionString
+      value: $[ stageDependencies.Provision.Provision.outputs['provVar.databaseConnectionString'] ]
     strategy:
       runOnce:
         preDeploy:
@@ -158,8 +132,16 @@ stages:
               archiveFilePatterns: '$(Pipeline.Workspace)/app/*.zip'
               destinationFolder: '$(System.DefaultWorkingDirectory)/work'
 
-          - script: |
-              env ConnectionStrings:DefaultConnection="$CONN_STRING" dotnet '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: pscore
+              scriptLocation: inlineScript
+              inlineScript: |
+                  Write-Host "Connection string is $(connectionString)"
+                  $token=(az account get-access-token --resource=https://database.windows.net/ --query accessToken --output tsv)
+                  ${env:ConnectionStrings:DefaultConnection}="$(connectionString);token=$token"
+                  dotnet '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
             env:
               CONN_STRING: $(connectionString)
             displayName: Run database migrations

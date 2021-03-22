@@ -29,9 +29,7 @@
         "sqlServerAdminUser": "[concat(parameters('appName'),'login')]",
         "location": "[resourceGroup().location]",
         "sqlServerAdminPassword": "[concat('P', uniqueString(resourceGroup().id, '492996D4-1C4D-41A3-AD86-18F403CC74DA'), 'x', '!')]",
-        "sqlServerAppPassword": "[concat('P', uniqueString(resourceGroup().id, '99E72A84-8073-4C74-947E-63909349095B'), 'x', '!')]",
-        "sqlServerPipelinePassword": "[concat('P', uniqueString(resourceGroup().id, '317F178A-9B17-4BFA-9382-DD70EFC1A58D'), 'x', '!')]",
-        "databaseConnectionString": "[concat('Server=tcp:',variables('sqlServerName'),'.database.windows.net,1433;Database=',variables('sqlDatabaseName'),';MultipleActiveResultSets=true;User ID=app;Password=', variables('sqlServerAppPassword'))]"
+        "databaseConnectionString": "[concat('Server=tcp:',variables('sqlServerName'),'.database.windows.net,1433;Database=',variables('sqlDatabaseName'),';MultipleActiveResultSets=true;')]"
     },
     "resources": [
         {
@@ -239,21 +237,9 @@
         }
     ],
     "outputs": {
-        "sqlServerAdminPassword": {
+        "databaseConnectionString": {
             "type": "string",
-            "value": "[variables('sqlServerAdminPassword')]"
-        },
-        "sqlServerAppPassword": {
-            "type": "string",
-            "value": "[variables('sqlServerAppPassword')]"
-        },
-        "sqlServerPipelinePassword": {
-            "type": "string",
-            "value": "[variables('sqlServerPipelinePassword')]"
-        },
-        "sqlServerAdminUser": {
-            "type": "string",
-            "value": "[variables('sqlServerAdminUser')]"
+            "value": "[variables('databaseConnectionString')]"
         },
         "sqlServerName": {
             "type": "string",
