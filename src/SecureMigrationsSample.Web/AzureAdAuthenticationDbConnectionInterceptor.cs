@@ -19,6 +19,7 @@ namespace SecureMigrationsSample.Web
 
         private static readonly TokenCredential _credential = new ChainedTokenCredential(
             new ManagedIdentityCredential(),
+            new AzureCliCredential(),
             new EnvironmentCredential());
 
         public override InterceptionResult ConnectionOpening(
