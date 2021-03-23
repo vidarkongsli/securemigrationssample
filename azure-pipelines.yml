@@ -139,8 +139,7 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                   Write-Host "Connection string is $(connectionString)"
-                  $token=(az account get-access-token --resource=https://database.windows.net/ --query accessToken --output tsv)
-                  ${env:ConnectionStrings:DefaultConnection}="$(connectionString);token=$token"
+                  ${env:ConnectionStrings:DefaultConnection}="$(connectionString)"
                   dotnet '$(System.DefaultWorkingDirectory)/work/SecureMigrationsSample.Web.dll' --migrate --thenExit
             env:
               CONN_STRING: $(connectionString)

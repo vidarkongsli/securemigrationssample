@@ -17,7 +17,6 @@ namespace SecureMigrationsSample.Web
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
 
@@ -27,14 +26,16 @@ namespace SecureMigrationsSample.Web
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SecureMigrationsSample.Web", Version = "v1" });
             });
 
-             services.AddDbContext<SampleContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            
+            services.AddDbContext<SampleContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+                options.AddInterceptors(new AzureAdAuthenticationDbConnectionInterceptor());
+            });
+
             services.AddHealthChecks()
                 .AddDbContextCheck<SampleContext>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -44,13 +45,11 @@ namespace SecureMigrationsSample.Web
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SecureMigrationsSample.Web v1"));
             }
 
-            app.UseHttpsRedirection();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
+            app
+                .UseHttpsRedirection()
+                .UseRouting()
+                .UseAuthorization()
+                .UseEndpoints(endpoints =>
             {
                 endpoints.MapHealthChecks("/health");
                 endpoints.MapControllers();
