@@ -163,7 +163,7 @@
                         "[resourceId('Microsoft.Web/Sites', variables('webAppName'))]"
                     ],
                     "properties": {
-                        "Default": {
+                        "DefaultConnection": {
                             "value": "[variables('databaseConnectionString')]",
                             "type": "SQLAzure"
                         }
