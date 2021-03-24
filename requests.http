@@ -1,0 +1,28 @@
+GET https://localhost:5001/health
+
+###
+
+GET https://localhost:5001/api/dbvalues
+
+###
+
+POST https://localhost:5001/api/dbvalues
+Content-Type: application/json
+
+{
+    "Name":"Monster",
+    "Value":"Basilisk"
+}
+
+###
+
+GET https://localhost:5001/api/dbvalues/1
+
+###
+
+PATCH https://localhost:5001/api/dbvalues/1
+Content-Type: application/json
+
+{
+    "Value":"Spider"
+}
